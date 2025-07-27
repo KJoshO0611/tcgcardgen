@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TCG Card Template Extended</title>
+  <style>
+    /* Base styles */
+    body { margin:0; padding:20px; font-family:'Arial',sans-serif; background:#222; display:flex; }
+    .controls { width:300px; background:rgba(0,0,0,0.8); padding:20px; border-radius:8px; color:#fff; }
+    .controls h3 { margin-top:0; color:#ffd700; }
+    .controls label { display:block; margin-top:10px; font-size:12px; color:#ffd700; }
+    .controls input, .controls textarea, .controls button, .controls select {
+      width:100%; padding:8px; margin-top:5px; border:none; border-radius:8px;
+      background:rgba(255,255,255,0.1); color:#fff; font-size:12px; box-sizing:border-box;
+    }
+    .controls input[type=range] { padding:0; }
+    .flip-btn { background:#444; color:#fff; margin-top:0; }
+    .download-btn { background:linear-gradient(45deg,#ffd700,#ffb347); color:#000; }
+    .canvas { margin-left:20px; perspective:1000px; }
+
+    /* Card container */
+    .card-container { width:600px; height:960px; position:relative; transform-style:preserve-3d; transition:transform 0.8s; }
+    .card, .card-back {
+      position:absolute; width:100%; height:100%; top:0; left:0;
+      backface-visibility:hidden; border-radius:30px; box-sizing:border-box;
+      box-shadow: 0 40px 80px rgba(0,0,0,0.3);
+      overflow:hidden;
+    }
+    .card.standard {
+      background-image: var(--card-bg-image), linear-gradient(145deg,#1a1a2e,#16213e);
+      background-size: cover, cover;
+      background-position: center, center;
+    }
+    .card.full {
+      background-image: var(--full-art-bg-image), linear-gradient(145deg,#1a1a2e,#16213e);
+      background-size: cover, cover;
+      background-position: center, center;
+    }
+    .card.full .card-image { display:none; }
+    .full-art-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  z-index: 0;
+  pointer-events: auto; /* allow drag events */
+  transition: none;
+}
+
+
+    
+    .card.standard, .card.full {
+      border: var(--border-size,40px) solid var(--border-color,#ffd700);
+      --border-size:40px;
+      --element-icon-color:#fff;
+      --element-fill-color:rgba(255,255,255,0.1);
+      --weakness-bg-color:rgba(255,255,255,0.15);
+    }
+    .card-back {
+      background:var(--back-bg, linear-gradient(135deg,#333,#555));
+      border: var(--border-size,40px) solid var(--border-color-back,#ffd700);
+      transform:rotateY(180deg);
+    }
+    .card-header { display:flex; justify-content:space-between; align-items:center; padding:16px 24px; z-index:2; }
+    .card-name { font-size:40px; font-weight:bold; color:#fff; text-shadow:2px 2px 4px rgba(0,0,0,0.8); }
+    .hp-element { display:flex; align-items:center; }
+    .hp { font-size:28px; font-weight:bold; color:#fff; text-shadow:2px 2px 4px rgba(0,0,0,0.8); }
+    .element-icon {
+  width:48px;
+  height:48px;
+  margin-left:16px;
+  border-radius:50%;
+  border:4px solid var(--element-icon-color);
+  background-color:var(--element-fill-color);
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+    .card-image { margin:40px; height:360px; background:rgba(51,51,51,0.8); display:flex; justify-content:center; align-items:center; color:#aaa; overflow:hidden; border-radius:16px; z-index:1; }
+    .card.full .card-image { display:none; }
+    .card-image img { width:100%; height:100%; object-fit:cover; }
+
+    .flavor-title { position: relative; display:flex; align-items:center; padding:60px 0px 0px 60px; font-size:36px; font-weight:bold; color:#fff; z-index:3; text-shadow:2px 2px 4px rgba(0,0,0,0.8); margin-top:0; }
+    .element-counter { display:flex; align-items:center; margin-right:16px; gap:8px; }
+    .element-count-icon { width:32px; height:32px; border-radius:50%; border:4px solid var(--element-icon-color); background-color:var(--element-fill-color); }
+    .flavor-icon { width:32px; height:32px; margin-right:16px; border-radius:50%; border:4px solid var(--element-icon-color); background-color:var(--element-fill-color); }
+    .flavor-text { position: relative; padding:0px 0px 0px 60px; font-size:24px; color:#ddd; line-height:1.2; z-index:3; text-shadow:1px 1px 2px rgba(0,0,0,0.8); }
+    .weakness { position:absolute; bottom:60px; right:40px; background:var(--weakness-bg-color); padding:12px 20px; border-radius:24px; font-size:20px; color:#fff; z-index:2; text-shadow:1px 1px 2px rgba(0,0,0,0.8); }
+    .card-number { position:absolute; bottom:20px; left:40px; font-size:20px; color:#fff; z-index:2; text-shadow:1px 1px 2px rgba(0,0,0,0.8); }
+    .card-back .back-pattern { width:100%; height:100%; object-fit:cover; position:absolute; top:0; left:0; }
+    .card-back .back-overlay { position:absolute; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.4); }
+    .card-back .back-title { position:absolute; top:40px; width:100%; text-align:center; font-size:36px; font-weight:bold; color:var(--back-title-color,#ffd700); z-index:2; text-shadow:2px 2px 4px rgba(0,0,0,0.8); }
+    .card-back .back-text { position:absolute; bottom:40px; left:40px; right:40px; font-size:24px; color:var(--back-text-color,#fff); line-height:1.3; z-index:2; text-shadow:1px 1px 2px rgba(0,0,0,0.8); }
+
+    /* Draggable element styles */
+    .draggable {
+      cursor: move;
+      transition: transform 0.1s ease;
+      user-select: none;
+    }
+    .draggable:hover {
+      transform: scale(1.02);
+      filter: brightness(1.1);
+    }
+    .dragging {
+      opacity: 0.8;
+      z-index: 1000 !important;
+      pointer-events: none;
+    }
+    .drag-indicator {
+      position: absolute;
+      border: 2px dashed #ffd700;
+      background: rgba(255, 215, 0, 0.1);
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.2s ease;
+    }
+    .drag-indicator.active {
+      opacity: 1;
+    }
+    .drag-mode .card {
+      cursor: crosshair;
+    }
+    .drag-toggle {
+      background: #ffd700 !important;
+      color: #000 !important;
+      font-weight: bold;
+    }
+    .drag-toggle.active {
+      background: #ff6b6b !important;
+      color: #fff !important;
+    }
+
+  </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" defer></script>
+</head>
+<body>
+  <div class="controls">
+    <h3>TCG Editor</h3>
+    <label>Style:</label>
+    <select id="cardStyle">
+      <option value="standard">Standard</option>
+      <option value="full">Full Art</option>
+    </select>
+    <button class="flip-btn" id="flipBtn">Flip Card</button>
+    <button class="drag-toggle" id="dragToggle">🎯 Enable Drag Mode</button>
+    <div id="frontControls">
+      <label>Name:</label><input type="text" id="cardName" value="Drunken Dict">
+      <label>HP:</label><input type="text" id="hp" value="999">
+
+      <!-- Font Selection Controls -->
+      <label>Font for Name/HP:</label>
+      <input type="file" id="customFontNameHP" accept=".ttf,.otf,.woff,.woff2" style="display:none;">
+      <button onclick="document.getElementById('customFontNameHP').click()">Upload Font</button>
+      <select id="fontNameHP">
+        <option value="Arial">Arial</option>
+        <option value="Georgia">Georgia</option>
+        <option value="Impact">Impact</option>
+        <option value="Courier New">Courier New</option>
+        <option value="Times New Roman">Times New Roman</option>
+      </select>
+      <label>Font Size (Name):</label><input type="range" id="fontSizeName" min="16" max="72" value="40">
+      <label>Font Size (HP):</label><input type="range" id="fontSizeHP" min="12" max="48" value="28">
+
+      <label>Font for Flavor:</label>
+      <input type="file" id="customFontFlavor" accept=".ttf,.otf,.woff,.woff2" style="display:none;">
+      <button onclick="document.getElementById('customFontFlavor').click()">Upload Font</button>
+      <select id="fontFlavor">
+        <option value="Arial">Arial</option>
+        <option value="Georgia">Georgia</option>
+        <option value="Impact">Impact</option>
+        <option value="Courier New">Courier New</option>
+        <option value="Times New Roman">Times New Roman</option>
+      </select>
+      <label>Font Size (Flavor Title):</label><input type="range" id="fontSizeFlavorTitle" min="16" max="60" value="36">
+      <label>Font Size (Flavor Text):</label><input type="range" id="fontSizeFlavorText" min="12" max="48" value="24">
+
+      <label>Font for Weakness:</label>
+      <input type="file" id="customFontWeakness" accept=".ttf,.otf,.woff,.woff2" style="display:none;">
+      <button onclick="document.getElementById('customFontWeakness').click()">Upload Font</button>
+      <select id="fontWeakness">
+        <option value="Arial">Arial</option>
+        <option value="Georgia">Georgia</option>
+        <option value="Impact">Impact</option>
+        <option value="Courier New">Courier New</option>
+        <option value="Times New Roman">Times New Roman</option>
+      </select>
+      <label>Font Size (Weakness):</label><input type="range" id="fontSizeWeakness" min="12" max="48" value="24">
+
+      <!-- Other Controls -->
+      <label>Element Icon:</label><input type="file" id="elementIcon" accept="image/*">
+      <label>Element Border Color:</label><input type="color" id="elementColor" value="#ffffff">
+      <label>Card Border Color:</label><input type="color" id="cardBorderColor" value="#ffd700">
+      <label>Element Fill Color:</label><input type="color" id="elementFillColor" value="#ffffff">
+      <label>Element Fill Opacity:</label><input type="range" id="elementFillOpacity" min="0" max="1" step="0.05" value="0.1">
+      <label>Element Count (before flavor title):</label><input type="number" id="elementCount" min="0" max="10" value="3">
+      
+      <!-- Image Uploads -->
+      <label>Card Background (Standard):</label><input type="file" id="bgUpload" accept="image/*">
+      <label>Art (Standard):</label><input type="file" id="standardArtUpload" accept="image/*">
+      <label>Art (Full Art PNG):</label><input type="file" id="fullArtPngUpload" accept="image/png">
+      <label>Background (Full Art):</label><input type="file" id="fullArtBgUpload" accept="image/*">
+
+      <label>Weakness Color:</label><input type="color" id="weaknessColor" value="#ffffff">
+      <label>Border Size (px):</label><input type="range" id="borderSize" min="0" max="80" value="40">
+      <label>Flavor Title:</label><input type="text" id="flavorTitle" value="Title">
+      <label>Flavor Text:</label><textarea id="flavorText" rows="4">Flavor text goes here...</textarea>
+      <label>Weakness:</label><input type="text" id="weakness" value="Madaming kalaban">
+      <label>Card Number:</label><input type="text" id="cardNumber" value="100111">
+      <button id="downloadFrontBtn" class="download-btn" type="button">📥 Download Front PNG</button>
+    </div>
+    <div id="backControls" style="display:none;">
+      <label>Back Pattern Image:</label><input type="file" id="backPattern" accept="image/*">
+      <label>Overlay Opacity:</label><input type="range" id="overlayOpacity" min="0" max="1" step="0.1" value="0.4">
+      <label>Back Title:</label><input type="text" id="backTitle" value="Lore & Rules">
+      <label>Title Color:</label><input type="color" id="backTitleColor" value="#ffd700">
+      <label>Back Text:</label><textarea id="backText" rows="4">Customize the lore or flavor text here.</textarea>
+      <label>Text Color:</label><input type="color" id="backTextColor" value="#ffffff">
+      <label>Border Color (Back):</label><input type="color" id="borderColorBack" value="#ffd700">
+      <button id="downloadBackBtn" class="download-btn" type="button">📥 Download Back PNG</button>
+    </div>
+  </div>
+  <div class="canvas">
+    <div class="card-container" id="cardContainer">
+      <div class="card standard" id="frontCard">
+        <div class="full-art-overlay draggable" id="fullArtOverlay" data-element="full-art"></div>
+        <div class="card-header">
+          <div class="card-name draggable" id="displayName" data-element="name">Drunken Dict</div>
+          <div class="hp-element draggable" id="hpElement" data-element="hp">
+            <div class="hp" id="displayHP">999</div>
+            <div class="element-icon" id="elementIcon"></div>
+          </div>
+        </div>
+        <div class="card-image">
+          <img id="displayArt" src="" style="display:none;" />
+          <div id="artPlaceholder">[Art]</div>
+        </div>
+        <div class="flavor-title draggable" id="displayFlavorTitle" data-element="flavor-title">
+          <div class="element-counter" id="elementCounter"></div>
+          Flavor Title
+        </div>
+        <div class="flavor-text draggable" id="displayFlavorText" data-element="flavor-text">Flavor text goes here.</div>
+        <div class="weakness draggable" id="displayWeakness" data-element="weakness">Weakness: Fire</div>
+        <div class="card-number" id="displayCardNumber">100111</div>
+      </div>
+      <div class="card-back" id="backCard">
+        <img class="back-pattern" id="backPatternImg" src="" style="display:none;" />
+        <div class="back-overlay" id="backOverlay"></div>
+        <div class="back-title draggable" id="displayBackTitle" data-element="back-title">Lore & Rules</div>
+        <div class="back-text draggable" id="displayBackText" data-element="back-text">Customize the lore or flavor text here.</div>
+      </div>
+    </div>
+  </div>
+  <script defer>
+    document.addEventListener('DOMContentLoaded', () => {
+
+      const frontCard = document.getElementById('frontCard');
+      const backCard = document.getElementById('backCard');
+      const styleSelect = document.getElementById('cardStyle');
+      let currentElementIcon = '';
+      
+      styleSelect.onchange = e => {
+        frontCard.classList.toggle('full', e.target.value === 'full');
+        frontCard.classList.toggle('standard', e.target.value === 'standard');
+      };
+      
+      const container = document.getElementById('cardContainer');
+      const frontCtrls = document.getElementById('frontControls');
+      const backCtrls = document.getElementById('backControls');
+      
+      document.getElementById('flipBtn').onclick = () => {
+        const flipped = container.style.transform === 'rotateY(180deg)';
+        container.style.transform = flipped ? '' : 'rotateY(180deg)';
+        frontCtrls.style.display = flipped ? 'block' : 'none';
+        backCtrls.style.display = flipped ? 'none' : 'block';
+      };
+      
+      const map = {
+        cardName: v => setText('displayName', v),
+        hp: v => setText('displayHP', 'HP ' + v),
+        flavorTitle: v => setText('displayFlavorTitle', v),
+        flavorText: v => setText('displayFlavorText', v),
+        weakness: v => setText('displayWeakness', v),
+        cardNumber: v => setText('displayCardNumber', v),
+        backTitle: v => setText('displayBackTitle', v),
+        backText: v => setText('displayBackText', v)
+      };
+      
+      function setText(id, val) {
+        const el = document.getElementById(id);
+        if (el) el.textContent = val;
+      }
+      
+      function updateElementCounter() {
+        const counter = document.getElementById('elementCounter');
+        if (!counter) return;
+        const count = parseInt(document.getElementById('elementCount').value) || 0;
+        
+        counter.innerHTML = '';
+        
+        for (let i = 0; i < count; i++) {
+          const icon = document.createElement('img');
+          icon.className = 'element-count-icon';
+          if (currentElementIcon) {
+            icon.src = currentElementIcon;
+            icon.style.display = 'inline-block';
+          } else {
+            icon.style.display = 'none';
+          }
+          counter.appendChild(icon);
+        }
+      }
+      
+      Object.keys(map).forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+          el.oninput = e => map[id](e.target.value);
+          map[id](el.value);
+        }
+      });
+      
+      document.getElementById('elementCount').oninput = updateElementCounter;
+      
+      document.getElementById('elementIcon').onchange = e => {
+        const url = e.target.files.length ? URL.createObjectURL(e.target.files[0]) : '';
+        document.querySelectorAll('.element-icon, .element-count-icon, .flavor-icon').forEach(el => el.style.backgroundImage = `url(${url})`);
+      };
+
+      // Handler for the standard card's main background image
+      document.getElementById('bgUpload').onchange = e => {
+        if (!e.target.files.length) return;
+        const url = URL.createObjectURL(e.target.files[0]);
+        frontCard.style.setProperty('--card-bg-image', `url(${url})`);
+      };
+
+      // Handler for the image inside the art box on the standard card
+      document.getElementById('standardArtUpload').onchange = e => {
+        if (!e.target.files.length) return;
+        const url = URL.createObjectURL(e.target.files[0]);
+        document.getElementById('displayArt').src = url;
+        document.getElementById('artPlaceholder').style.display = 'none';
+      };
+
+      // Handler for the PNG art overlay on the full art card
+      document.getElementById('fullArtPngUpload').onchange = e => {
+        if (!e.target.files.length) return;
+        const url = URL.createObjectURL(e.target.files[0]);
+        document.getElementById('fullArtOverlay').style.backgroundImage = `url(${url})`;
+      };
+
+      // Handler for the main background of the full art card
+      document.getElementById('fullArtBgUpload').onchange = e => {
+        if (!e.target.files.length) return;
+        const url = URL.createObjectURL(e.target.files[0]);
+        frontCard.style.setProperty('--full-art-bg-image', `url(${url})`);
+      };
+
+      document.getElementById('borderSize').oninput = e => { 
+        const val = e.target.value + 'px'; 
+        frontCard.style.setProperty('--border-size', val); 
+        backCard.style.setProperty('--border-size', val); 
+      };
+      
+      document.getElementById('elementColor').oninput = e => {
+        frontCard.style.setProperty('--element-icon-color', e.target.value);
+      };
+
+      document.getElementById('cardBorderColor').oninput = e => {
+        frontCard.style.setProperty('--border-color', e.target.value);
+      };
+
+      // Initialize colors on load
+      document.getElementById('elementColor').dispatchEvent(new Event('input'));
+      document.getElementById('cardBorderColor').dispatchEvent(new Event('input'));
+      
+      const elFillColor = document.getElementById('elementFillColor'), 
+            elFillOp = document.getElementById('elementFillOpacity');
+      function updateFill() {
+        const hex = elFillColor.value, alpha = elFillOp.value;
+        const r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
+        frontCard.style.setProperty('--element-fill-color', `rgba(${r},${g},${b},${alpha})`);
+      }
+      elFillColor.oninput = updateFill; 
+      elFillOp.oninput = updateFill; 
+      updateFill();
+      
+      document.getElementById('weaknessColor').oninput = e => 
+        frontCard.style.setProperty('--weakness-bg-color', e.target.value);
+      
+      document.getElementById('borderColorBack').oninput = e => 
+        backCard.style.setProperty('--border-color-back', e.target.value);
+      
+      document.getElementById('overlayOpacity').oninput = e => 
+        document.getElementById('backOverlay').style.background = `rgba(0,0,0,${e.target.value})`;
+      
+      document.getElementById('backTitleColor').oninput = e => 
+        backCard.style.setProperty('--back-title-color', e.target.value);
+      
+      document.getElementById('backTextColor').oninput = e => 
+        backCard.style.setProperty('--back-text-color', e.target.value);
+      
+      document.getElementById('downloadFrontBtn').onclick = () => { 
+        html2canvas(frontCard, { backgroundColor:null, scale:2 }).then(canvas => 
+          canvas.toBlob(blob => { 
+            const a = document.createElement('a'); 
+            a.download = 'card_front.png'; 
+            a.href = URL.createObjectURL(blob); 
+            document.body.appendChild(a); 
+            a.click(); 
+            document.body.removeChild(a); 
+          })
+        ); 
+      };
+      
+      document.getElementById('downloadBackBtn').onclick = () => {
+        const prevContainerTransform = container.style.transform;
+        const prevBackTransform = backCard.style.transform;
+        container.style.transform = '';
+        backCard.style.transform = 'none';
+        html2canvas(backCard, { backgroundColor:null, scale:2 }).then(canvas => 
+          canvas.toBlob(blob => {
+            const a = document.createElement('a');
+            a.download = 'card_back.png';
+            a.href = URL.createObjectURL(blob);
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+          })
+        ).finally(() => {
+          container.style.transform = prevContainerTransform;
+          backCard.style.transform = prevBackTransform;
+        });
+      };
+      
+      // 🎯 Custom Font Upload Logic
+      function setupFontUpload(inputId, selectId) {
+        const input = document.getElementById(inputId);
+        const select = document.getElementById(selectId);
+
+        input.onchange = e => {
+          const file = e.target.files[0];
+          if (!file) return;
+
+          const reader = new FileReader();
+          reader.onload = event => {
+            const fontUrl = event.target.result;
+            const fontName = `custom-${file.name.split('.')[0]}-${Date.now()}`;
+            
+            const newStyle = document.createElement('style');
+            newStyle.textContent = `
+              @font-face {
+                font-family: '${fontName}';
+                src: url('${fontUrl}');
+              }
+            `;
+            document.head.appendChild(newStyle);
+
+            const option = document.createElement('option');
+            option.value = fontName;
+            option.textContent = `Custom: ${file.name}`;
+            select.appendChild(option);
+            select.value = fontName;
+            
+            select.dispatchEvent(new Event('change'));
+          };
+          reader.readAsDataURL(file);
+        };
+      }
+
+      setupFontUpload('customFontNameHP', 'fontNameHP');
+      setupFontUpload('customFontFlavor', 'fontFlavor');
+      setupFontUpload('customFontWeakness', 'fontWeakness');
+
+      // 🎯 Font selection logic
+      function applyFont(id, fontFamily) {
+        const el = document.getElementById(id);
+        if (el) el.style.fontFamily = fontFamily;
+      }
+
+      document.getElementById('fontNameHP').onchange = e => {
+        applyFont('displayName', e.target.value);
+        applyFont('displayHP', e.target.value);
+      };
+
+      document.getElementById('fontFlavor').onchange = e => {
+        applyFont('displayFlavorTitle', e.target.value);
+        applyFont('displayFlavorText', e.target.value);
+      };
+
+      document.getElementById('fontWeakness').onchange = e => {
+        applyFont('displayWeakness', e.target.value);
+      };
+
+      // Auto-apply current selections on load
+      document.getElementById('fontNameHP').dispatchEvent(new Event('change'));
+      document.getElementById('fontFlavor').dispatchEvent(new Event('change'));
+      document.getElementById('fontWeakness').dispatchEvent(new Event('change'));
+
+      // 🎯 Font size logic
+      function applyFontSize(id, fontSize) {
+        const el = document.getElementById(id);
+        if (el) el.style.fontSize = `${fontSize}px`;
+      }
+
+      document.getElementById('fontSizeName').oninput = e => {
+        applyFontSize('displayName', e.target.value);
+      };
+
+      document.getElementById('fontSizeHP').oninput = e => {
+        applyFontSize('displayHP', e.target.value);
+      };
+
+      document.getElementById('fontSizeFlavorTitle').oninput = e => {
+        applyFontSize('displayFlavorTitle', e.target.value);
+      };
+
+      document.getElementById('fontSizeFlavorText').oninput = e => {
+        applyFontSize('displayFlavorText', e.target.value);
+      };
+
+      document.getElementById('fontSizeWeakness').oninput = e => {
+        applyFontSize('displayWeakness', e.target.value);
+      };
+
+      // Auto-apply current selections on load
+      document.getElementById('fontSizeName').dispatchEvent(new Event('input'));
+      document.getElementById('fontSizeHP').dispatchEvent(new Event('input'));
+      document.getElementById('fontSizeFlavorTitle').dispatchEvent(new Event('input'));
+      document.getElementById('fontSizeFlavorText').dispatchEvent(new Event('input'));
+      document.getElementById('fontSizeWeakness').dispatchEvent(new Event('input'));
+
+
+
+      // Initialize element counter
+      updateElementCounter();
+
+      // 🎯 Live Drag-and-Drop for Element Positioning
+      function setupLiveDragging() {
+          const cardContainer = document.getElementById('cardContainer');
+          const dragToggle = document.getElementById('dragToggle');
+          const flipBtn = document.getElementById('flipBtn');
+
+          if (!dragToggle || !cardContainer || !flipBtn) {
+              console.error('Drag and drop elements not found! Aborting setup.');
+              return;
+          }
+
+          let isDragMode = false;
+
+          // Load positions from localStorage
+          function applySavedPositions() {
+              const positions = JSON.parse(localStorage.getItem('elementPositions') || '{}');
+              Object.keys(positions).forEach(id => {
+                  const el = document.querySelector(`.draggable[data-element='${id}']`);
+                  if (el) {
+                      el.style.position = 'absolute';
+                      el.style.left = positions[id].left;
+                      el.style.top = positions[id].top;
+                  }
+              });
+          }
+
+          // Save position to localStorage
+          function savePosition(element) {
+              const positions = JSON.parse(localStorage.getItem('elementPositions') || '{}');
+              const elementId = element.getAttribute('data-element');
+              if (elementId) {
+                  positions[elementId] = { left: element.style.left, top: element.style.top };
+                  localStorage.setItem('elementPositions', JSON.stringify(positions));
+              }
+          }
+
+          // Toggle drag mode
+          dragToggle.addEventListener('click', () => {
+              isDragMode = !isDragMode;
+              dragToggle.textContent = isDragMode ? '🔒 Disable Drag Mode' : '🎯 Enable Drag Mode';
+              dragToggle.classList.toggle('active', isDragMode);
+              cardContainer.classList.toggle('drag-mode', isDragMode);
+          });
+
+          // Main dragging logic
+          let draggedElement = null;
+          let offset = { x: 0, y: 0 };
+
+          document.addEventListener('mousedown', (e) => {
+              if (!isDragMode) return;
+              const target = e.target.closest('.draggable');
+              if (!target) return;
+
+              draggedElement = target;
+              const rect = draggedElement.getBoundingClientRect();
+              const cardRect = draggedElement.closest('.card, .card-back').getBoundingClientRect();
+
+              offset = {
+                  x: e.clientX - rect.left,
+                  y: e.clientY - rect.top
+              };
+
+              // Ensure element is positioned absolutely for dragging
+              if (window.getComputedStyle(draggedElement).position !== 'absolute') {
+
+                  let topPosition = rect.top - cardRect.top;
+
+                  // Fix for full art flavor title jump by subtracting the margin
+                  if (draggedElement.getAttribute('data-element') === 'flavorTitle' && cardContainer.querySelector('.card.full')) {
+                      topPosition -= 450; // The margin value from the CSS
+                  }
+
+                  draggedElement.style.position = 'absolute';
+                  draggedElement.style.left = `${rect.left - cardRect.left}px`;
+                  draggedElement.style.top = `${topPosition}px`;
+                  draggedElement.style.width = `${rect.width}px`;
+              }
+              
+              draggedElement.classList.add('dragging');
+              document.addEventListener('mousemove', onMouseMove);
+              document.addEventListener('mouseup', onMouseUp);
+          });
+
+          function onMouseMove(e) {
+              if (!draggedElement) return;
+              const card = draggedElement.closest('.card, .card-back');
+              const cardRect = card.getBoundingClientRect();
+              
+              let x = e.clientX - cardRect.left - offset.x;
+              let y = e.clientY - cardRect.top - offset.y;
+
+              // Boundary check
+              x = Math.max(0, Math.min(x, cardRect.width - draggedElement.offsetWidth));
+              y = Math.max(0, Math.min(y, cardRect.height - draggedElement.offsetHeight));
+
+              draggedElement.style.left = `${x}px`;
+              draggedElement.style.top = `${y}px`;
+          }
+
+          function onMouseUp() {
+              if (draggedElement) {
+                  savePosition(draggedElement);
+                  draggedElement.classList.remove('dragging');
+              }
+              draggedElement = null;
+              document.removeEventListener('mousemove', onMouseMove);
+              document.removeEventListener('mouseup', onMouseUp);
+          }
+
+          // Reset button
+          const resetBtn = document.createElement('button');
+          resetBtn.textContent = '🔄 Reset Positions';
+          resetBtn.className = 'flip-btn';
+          resetBtn.style.marginTop = '10px';
+          resetBtn.addEventListener('click', () => {
+              localStorage.removeItem('elementPositions');
+              window.location.reload(); 
+          });
+          dragToggle.parentNode.insertBefore(resetBtn, dragToggle.nextSibling);
+          
+          // Integrate with flip button
+          const originalFlip = flipBtn.onclick;
+          flipBtn.onclick = function(e) {
+              if (originalFlip) {
+                  originalFlip.call(this, e);
+              }
+              // Re-apply positions after flip animation
+              setTimeout(applySavedPositions, 100);
+          };
+
+          // Apply positions on initial load
+          applySavedPositions();
+      }
+
+      setupLiveDragging();
+
+
+
+    });
+  </script>
+</body>
+</html>
+
