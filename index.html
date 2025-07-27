@@ -259,8 +259,12 @@
             <div class="element-icon" id="elementIcon"></div>
           </div>
         </div>
-        <div class="card-image">
-          <img id="displayArt" src="" style="display:none;" />
+        <div class="card-image" id="standardArtContainer" style="position:relative;">
+          <img id="displayArt" src="" style="display:none; position:absolute; left:0; top:0; width:100%; height:100%; object-fit:cover;" />
+          <div class="resizer resizer-nw" id="artResizerNW" style="display:none;"></div>
+          <div class="resizer resizer-ne" id="artResizerNE" style="display:none;"></div>
+          <div class="resizer resizer-sw" id="artResizerSW" style="display:none;"></div>
+          <div class="resizer resizer-se" id="artResizerSE" style="display:none;"></div>
           <div id="artPlaceholder">[Art]</div>
         </div>
         <div class="element-counter draggable" id="elementCounter" data-element="element-counter" style="position:absolute; left:60px; top:280px;"></div>
@@ -367,7 +371,9 @@
       document.getElementById('standardArtUpload').onchange = e => {
         if (!e.target.files.length) return;
         const url = URL.createObjectURL(e.target.files[0]);
-        document.getElementById('displayArt').src = url;
+        const artImg = document.getElementById('displayArt');
+        artImg.src = url;
+        artImg.style.display = 'block';
         document.getElementById('artPlaceholder').style.display = 'none';
       };
 
@@ -812,6 +818,158 @@
         });
       }
 
+
+      // --- Resizable and Draggable Standard Art Image ---
+      function setupResizableStandardArt() {
+        const container = document.getElementById('standardArtContainer');
+        const artImg = document.getElementById('displayArt');
+        const handles = [
+          document.getElementById('artResizerNW'),
+          document.getElementById('artResizerNE'),
+          document.getElementById('artResizerSW'),
+          document.getElementById('artResizerSE')
+        ];
+        let isResizing = false, resizeDir = '', startX = 0, startY = 0, startW = 0, startH = 0, startL = 0, startT = 0;
+        let isDragging = false, dragOffsetX = 0, dragOffsetY = 0;
+        let artSelected = false;
+
+        function showHandles(show) {
+          handles.forEach(h => h.style.display = show ? 'block' : 'none');
+          if (show) artImg.classList.add('resizing-art-selected');
+          else artImg.classList.remove('resizing-art-selected');
+        }
+        showHandles(false);
+
+        // Position handles based on artImg rect
+        function updateHandlePositions() {
+          const rect = artImg.getBoundingClientRect();
+          const parentRect = container.getBoundingClientRect();
+          const left = artImg.offsetLeft, top = artImg.offsetTop, w = artImg.offsetWidth, h = artImg.offsetHeight;
+          handles[0].style.left = (left-8)+"px"; handles[0].style.top = (top-8)+"px";
+          handles[1].style.left = (left+w-8)+"px"; handles[1].style.top = (top-8)+"px";
+          handles[2].style.left = (left-8)+"px"; handles[2].style.top = (top+h-8)+"px";
+          handles[3].style.left = (left+w-8)+"px"; handles[3].style.top = (top+h-8)+"px";
+        }
+
+        // Select art image
+        artImg.addEventListener('mousedown', function(e) {
+          artSelected = true;
+          showHandles(true);
+          updateHandlePositions();
+          if (window.removeTextResizerHandles) window.removeTextResizerHandles();
+          e.stopPropagation();
+        });
+        // Deselect on outside click
+        document.addEventListener('mousedown', function(e) {
+          if (!container.contains(e.target) || (!artImg.contains(e.target) && !handles.some(h=>h.contains(e.target)))) {
+            artSelected = false;
+            showHandles(false);
+          }
+        });
+
+        // Drag logic
+        artImg.addEventListener('mousedown', function(e) {
+          if (handles.some(h=>h.contains(e.target))) return;
+          isDragging = true;
+          dragOffsetX = e.offsetX;
+          dragOffsetY = e.offsetY;
+          e.preventDefault();
+        });
+        document.addEventListener('mousemove', function(e) {
+          if (isDragging && artSelected) {
+            const parentRect = container.getBoundingClientRect();
+            let newL = e.clientX - parentRect.left - dragOffsetX;
+            let newT = e.clientY - parentRect.top - dragOffsetY;
+            // Allow moving past container bounds (overflow is hidden)
+            artImg.style.left = newL + 'px';
+            artImg.style.top = newT + 'px';
+            updateHandlePositions();
+          }
+        });
+
+        document.addEventListener('mouseup', function(e) {
+          if (isDragging) {
+            isDragging = false;
+            saveArtState();
+          }
+        });
+
+        // Resize logic
+        handles[0].addEventListener('mousedown', function(e) { startResize('nw', e); });
+        handles[1].addEventListener('mousedown', function(e) { startResize('ne', e); });
+        handles[2].addEventListener('mousedown', function(e) { startResize('sw', e); });
+        handles[3].addEventListener('mousedown', function(e) { startResize('se', e); });
+
+        function startResize(dir, e) {
+          isResizing = true;
+          resizeDir = dir;
+          startX = e.clientX;
+          startY = e.clientY;
+          startW = artImg.offsetWidth;
+          startH = artImg.offsetHeight;
+          startL = artImg.offsetLeft;
+          startT = artImg.offsetTop;
+          e.stopPropagation();
+          e.preventDefault();
+        }
+        document.addEventListener('mousemove', function(e) {
+          if (isResizing && artSelected) {
+            let dx = e.clientX - startX;
+            let dy = e.clientY - startY;
+            let newW = startW, newH = startH, newL = startL, newT = startT;
+            if (resizeDir === 'nw') {
+              newW = Math.max(40, startW - dx);
+              newH = Math.max(40, startH - dy);
+              newL = startL + dx;
+              newT = startT + dy;
+            } else if (resizeDir === 'ne') {
+              newW = Math.max(40, startW + dx);
+              newH = Math.max(40, startH - dy);
+              newT = startT + dy;
+            } else if (resizeDir === 'sw') {
+              newW = Math.max(40, startW - dx);
+              newH = Math.max(40, startH + dy);
+              newL = startL + dx;
+            } else if (resizeDir === 'se') {
+              newW = Math.max(40, startW + dx);
+              newH = Math.max(40, startH + dy);
+            }
+            // Allow resizing past container bounds (overflow is hidden)
+            artImg.style.width = newW + 'px';
+            artImg.style.height = newH + 'px';
+            artImg.style.left = newL + 'px';
+            artImg.style.top = newT + 'px';
+            updateHandlePositions();
+          }
+        });
+
+        document.addEventListener('mouseup', function(e) {
+          if (isResizing) {
+            isResizing = false;
+            saveArtState();
+          }
+        });
+
+        // Save/load state
+        function saveArtState() {
+          const state = {
+            left: artImg.style.left,
+            top: artImg.style.top,
+            width: artImg.style.width,
+            height: artImg.style.height
+          };
+          localStorage.setItem('standardArtState', JSON.stringify(state));
+        }
+        function loadArtState() {
+          const state = JSON.parse(localStorage.getItem('standardArtState') || '{}');
+          if (state.left) artImg.style.left = state.left;
+          if (state.top) artImg.style.top = state.top;
+          if (state.width) artImg.style.width = state.width;
+          if (state.height) artImg.style.height = state.height;
+        }
+        loadArtState();
+      }
+      setupResizableStandardArt();
 
       // --- Resizable and Draggable Full Art Overlay ---
        function setupResizableOverlay() {
