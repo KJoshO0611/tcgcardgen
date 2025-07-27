@@ -39,11 +39,8 @@
     }
     .card.full .card-image { display:none; }
     .full-art-overlay {
+  box-sizing: border-box;
   position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
   background-size: contain;
   background-repeat: no-repeat;
   background-position: center;
@@ -51,9 +48,27 @@
   pointer-events: auto; /* allow drag events */
   transition: none;
 }
+.resizable {
+  position: absolute;
+}
+.resizer {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #ffd700;
+  border: 2px solid #fff;
+  position: absolute;
+  z-index: 20;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+  cursor: pointer;
+}
+.resizer-nw { left: -8px; top: -8px; cursor: nwse-resize; }
+.resizer-ne { right: -8px; top: -8px; cursor: nesw-resize; }
+.resizer-sw { left: -8px; bottom: -8px; cursor: nesw-resize; }
+.resizer-se { right: -8px; bottom: -8px; cursor: nwse-resize; }
+.full-art-overlay.resizing { outline: 2px dashed #ffd700; }
 
 
-    
     .card.standard, .card.full {
       border: var(--border-size,40px) solid var(--border-color,#ffd700);
       --border-size:40px;
@@ -150,70 +165,73 @@
     <button class="flip-btn" id="flipBtn">Flip Card</button>
     <button class="drag-toggle" id="dragToggle">🎯 Enable Drag Mode</button>
     <div id="frontControls">
+  <fieldset>
+      <legend>Card Details</legend>
       <label>Name:</label><input type="text" id="cardName" value="Drunken Dict">
       <label>HP:</label><input type="text" id="hp" value="999">
-
-      <!-- Font Selection Controls -->
-      <label>Font for Name/HP:</label>
-      <input type="file" id="customFontNameHP" accept=".ttf,.otf,.woff,.woff2" style="display:none;">
-      <button onclick="document.getElementById('customFontNameHP').click()">Upload Font</button>
-      <select id="fontNameHP">
-        <option value="Arial">Arial</option>
-        <option value="Georgia">Georgia</option>
-        <option value="Impact">Impact</option>
-        <option value="Courier New">Courier New</option>
-        <option value="Times New Roman">Times New Roman</option>
-      </select>
-      <label>Font Size (Name):</label><input type="range" id="fontSizeName" min="16" max="72" value="40">
-      <label>Font Size (HP):</label><input type="range" id="fontSizeHP" min="12" max="48" value="28">
-
-      <label>Font for Flavor:</label>
-      <input type="file" id="customFontFlavor" accept=".ttf,.otf,.woff,.woff2" style="display:none;">
-      <button onclick="document.getElementById('customFontFlavor').click()">Upload Font</button>
-      <select id="fontFlavor">
-        <option value="Arial">Arial</option>
-        <option value="Georgia">Georgia</option>
-        <option value="Impact">Impact</option>
-        <option value="Courier New">Courier New</option>
-        <option value="Times New Roman">Times New Roman</option>
-      </select>
-      <label>Font Size (Flavor Title):</label><input type="range" id="fontSizeFlavorTitle" min="16" max="60" value="36">
-      <label>Font Size (Flavor Text):</label><input type="range" id="fontSizeFlavorText" min="12" max="48" value="24">
-
-      <label>Font for Weakness:</label>
-      <input type="file" id="customFontWeakness" accept=".ttf,.otf,.woff,.woff2" style="display:none;">
-      <button onclick="document.getElementById('customFontWeakness').click()">Upload Font</button>
-      <select id="fontWeakness">
-        <option value="Arial">Arial</option>
-        <option value="Georgia">Georgia</option>
-        <option value="Impact">Impact</option>
-        <option value="Courier New">Courier New</option>
-        <option value="Times New Roman">Times New Roman</option>
-      </select>
-      <label>Font Size (Weakness):</label><input type="range" id="fontSizeWeakness" min="12" max="48" value="24">
-
-      <!-- Other Controls -->
-      <label>Element Icon:</label><input type="file" id="elementIcon" accept="image/*">
-      <label>Element Border Color:</label><input type="color" id="elementColor" value="#ffffff">
-      <label>Card Border Color:</label><input type="color" id="cardBorderColor" value="#ffd700">
-      <label>Element Fill Color:</label><input type="color" id="elementFillColor" value="#ffffff">
-      <label>Element Fill Opacity:</label><input type="range" id="elementFillOpacity" min="0" max="1" step="0.05" value="0.1">
       <label>Element Count (before flavor title):</label><input type="number" id="elementCount" min="0" max="10" value="3">
-      
-      <!-- Image Uploads -->
-      <label>Card Background (Standard):</label><input type="file" id="bgUpload" accept="image/*">
-      <label>Art (Standard):</label><input type="file" id="standardArtUpload" accept="image/*">
-      <label>Art (Full Art PNG):</label><input type="file" id="fullArtPngUpload" accept="image/png">
-      <label>Background (Full Art):</label><input type="file" id="fullArtBgUpload" accept="image/*">
-
-      <label>Weakness Color:</label><input type="color" id="weaknessColor" value="#ffffff">
-      <label>Border Size (px):</label><input type="range" id="borderSize" min="0" max="80" value="40">
       <label>Flavor Title:</label><input type="text" id="flavorTitle" value="Title">
       <label>Flavor Text:</label><textarea id="flavorText" rows="4">Flavor text goes here...</textarea>
       <label>Weakness:</label><input type="text" id="weakness" value="Madaming kalaban">
       <label>Card Number:</label><input type="text" id="cardNumber" value="100111">
-      <button id="downloadFrontBtn" class="download-btn" type="button">📥 Download Front PNG</button>
-    </div>
+  </fieldset>
+  <fieldset>
+    <legend>Images</legend>
+    <label>Element Icon:</label><input type="file" id="elementIcon" accept="image/*">
+    <label>Card Background (Standard):</label><input type="file" id="bgUpload" accept="image/*">
+    <label>Art (Standard):</label><input type="file" id="standardArtUpload" accept="image/*">
+    <label>Art (Full Art PNG):</label><input type="file" id="fullArtPngUpload" accept="image/png">
+    <label>Background (Full Art):</label><input type="file" id="fullArtBgUpload" accept="image/*">
+  </fieldset>
+  <fieldset>
+    <legend>Card Colors</legend>
+    <label>Card Border Color:</label><input type="color" id="cardBorderColor" value="#ffd700">
+    <label>Element Border Color:</label><input type="color" id="elementColor" value="#ffffff">
+    <label>Element Fill Color:</label><input type="color" id="elementFillColor" value="#ffffff">
+    <label>Element Fill Opacity:</label><input type="range" id="elementFillOpacity" min="0" max="1" step="0.05" value="0.1">
+    <label>Weakness Color:</label><input type="color" id="weaknessColor" value="#ffffff">
+    <label>Border Size (px):</label><input type="range" id="borderSize" min="0" max="80" value="40">
+  </fieldset>
+  <fieldset>
+    <legend>Fonts</legend>
+    <label>Font for Name/HP:</label>
+    <input type="file" id="customFontNameHP" accept=".ttf,.otf,.woff,.woff2" style="display:none;">
+    <button onclick="document.getElementById('customFontNameHP').click()">Upload Font</button>
+    <select id="fontNameHP">
+      <option value="Arial">Arial</option>
+      <option value="Georgia">Georgia</option>
+      <option value="Impact">Impact</option>
+      <option value="Courier New">Courier New</option>
+      <option value="Times New Roman">Times New Roman</option>
+    </select>
+    <label>Font Size (Name):</label><input type="range" id="fontSizeName" min="16" max="72" value="40">
+    <label>Font Size (HP):</label><input type="range" id="fontSizeHP" min="12" max="48" value="28">
+    <label>Font for Flavor:</label>
+    <input type="file" id="customFontFlavor" accept=".ttf,.otf,.woff,.woff2" style="display:none;">
+    <button onclick="document.getElementById('customFontFlavor').click()">Upload Font</button>
+    <select id="fontFlavor">
+      <option value="Arial">Arial</option>
+      <option value="Georgia">Georgia</option>
+      <option value="Impact">Impact</option>
+      <option value="Courier New">Courier New</option>
+      <option value="Times New Roman">Times New Roman</option>
+    </select>
+    <label>Font Size (Flavor Title):</label><input type="range" id="fontSizeFlavorTitle" min="16" max="60" value="36">
+    <label>Font Size (Flavor Text):</label><input type="range" id="fontSizeFlavorText" min="12" max="48" value="24">
+    <label>Font for Weakness:</label>
+    <input type="file" id="customFontWeakness" accept=".ttf,.otf,.woff,.woff2" style="display:none;">
+    <button onclick="document.getElementById('customFontWeakness').click()">Upload Font</button>
+    <select id="fontWeakness">
+      <option value="Arial">Arial</option>
+      <option value="Georgia">Georgia</option>
+      <option value="Impact">Impact</option>
+      <option value="Courier New">Courier New</option>
+      <option value="Times New Roman">Times New Roman</option>
+    </select>
+    <label>Font Size (Weakness):</label><input type="range" id="fontSizeWeakness" min="12" max="48" value="24">
+  </fieldset>
+  <button id="downloadFrontBtn" class="download-btn" type="button">📥 Download Front PNG</button>
+</div>
     <div id="backControls" style="display:none;">
       <label>Back Pattern Image:</label><input type="file" id="backPattern" accept="image/*">
       <label>Overlay Opacity:</label><input type="range" id="overlayOpacity" min="0" max="1" step="0.1" value="0.4">
@@ -228,7 +246,12 @@
   <div class="canvas">
     <div class="card-container" id="cardContainer">
       <div class="card standard" id="frontCard">
-        <div class="full-art-overlay draggable" id="fullArtOverlay" data-element="full-art"></div>
+        <div class="full-art-overlay draggable resizable" id="fullArtOverlay" data-element="full-art" style="position:absolute; left:0; top:0; width:400px; height:400px;">
+          <div class="resizer resizer-nw"></div>
+          <div class="resizer resizer-ne"></div>
+          <div class="resizer resizer-sw"></div>
+          <div class="resizer resizer-se"></div>
+        </div>
         <div class="card-header">
           <div class="card-name draggable" id="displayName" data-element="name">Drunken Dict</div>
           <div class="hp-element draggable" id="hpElement" data-element="hp">
@@ -240,8 +263,8 @@
           <img id="displayArt" src="" style="display:none;" />
           <div id="artPlaceholder">[Art]</div>
         </div>
+        <div class="element-counter draggable" id="elementCounter" data-element="element-counter" style="position:absolute; left:60px; top:280px;"></div>
         <div class="flavor-title draggable" id="displayFlavorTitle" data-element="flavor-title">
-          <div class="element-counter" id="elementCounter"></div>
           Flavor Title
         </div>
         <div class="flavor-text draggable" id="displayFlavorText" data-element="flavor-text">Flavor text goes here.</div>
@@ -328,7 +351,9 @@
       
       document.getElementById('elementIcon').onchange = e => {
         const url = e.target.files.length ? URL.createObjectURL(e.target.files[0]) : '';
-        document.querySelectorAll('.element-icon, .element-count-icon, .flavor-icon').forEach(el => el.style.backgroundImage = `url(${url})`);
+        currentElementIcon = url;
+        document.querySelectorAll('.element-icon, .flavor-icon').forEach(el => el.style.backgroundImage = `url(${url})`);
+        updateElementCounter();
       };
 
       // Handler for the standard card's main background image
@@ -539,6 +564,19 @@
       // Initialize element counter
       updateElementCounter();
 
+      // Handler for the back pattern image upload
+      document.getElementById('backPattern').onchange = e => {
+        const img = document.getElementById('backPatternImg');
+        if (!e.target.files.length) {
+          img.src = '';
+          img.style.display = 'none';
+          return;
+        }
+        const url = URL.createObjectURL(e.target.files[0]);
+        img.src = url;
+        img.style.display = 'block';
+      };
+
       // 🎯 Live Drag-and-Drop for Element Positioning
       function setupLiveDragging() {
           const cardContainer = document.getElementById('cardContainer');
@@ -674,6 +712,198 @@
       }
 
       setupLiveDragging();
+      setupResizableOverlay();
+
+      // --- Resizable and Draggable Full Art Overlay ---
+      function setupResizableOverlay() {
+        const overlay = document.getElementById('fullArtOverlay');
+        const container = document.getElementById('cardContainer');
+        let isResizing = false, resizeDir = '', startX = 0, startY = 0, startW = 0, startH = 0, startL = 0, startT = 0;
+
+        // Drag logic (allow anywhere in container)
+        let isDragging = false, dragOffsetX = 0, dragOffsetY = 0;
+        overlay.addEventListener('mousedown', function(e) {
+          if (e.target.classList.contains('resizer')) return;
+          isDragging = true;
+          dragOffsetX = e.clientX - overlay.offsetLeft;
+          dragOffsetY = e.clientY - overlay.offsetTop;
+          overlay.classList.add('dragging');
+        });
+        document.addEventListener('mousemove', function(e) {
+          if (isDragging) {
+            let x = e.clientX - dragOffsetX;
+            let y = e.clientY - dragOffsetY;
+            // No boundaries, allow overlay to go past card area
+            overlay.style.left = x + 'px';
+            overlay.style.top = y + 'px';
+          }
+        });
+        document.addEventListener('mouseup', function(e) {
+          if (isDragging) {
+            isDragging = false;
+            overlay.classList.remove('dragging');
+            saveFullArtOverlayState();
+          }
+        });
+        // Touch drag
+        overlay.addEventListener('touchstart', function(e) {
+          if (e.target.classList.contains('resizer')) return;
+          isDragging = true;
+          const touch = e.touches[0];
+          dragOffsetX = touch.clientX - overlay.offsetLeft;
+          dragOffsetY = touch.clientY - overlay.offsetTop;
+          overlay.classList.add('dragging');
+        });
+        document.addEventListener('touchmove', function(e) {
+          if (isDragging) {
+            const touch = e.touches[0];
+            let x = touch.clientX - dragOffsetX;
+            let y = touch.clientY - dragOffsetY;
+            x = Math.max(0, Math.min(x, container.offsetWidth - overlay.offsetWidth));
+            y = Math.max(0, Math.min(y, container.offsetHeight - overlay.offsetHeight));
+            overlay.style.left = x + 'px';
+            overlay.style.top = y + 'px';
+          }
+        });
+        document.addEventListener('touchend', function(e) {
+          if (isDragging) {
+            isDragging = false;
+            overlay.classList.remove('dragging');
+            saveFullArtOverlayState();
+          }
+        });
+
+        // Resize logic
+        overlay.querySelectorAll('.resizer').forEach(handle => {
+          handle.addEventListener('mousedown', function(e) {
+            e.stopPropagation();
+            isResizing = true;
+            overlay.classList.add('resizing');
+            resizeDir = handle.classList.contains('resizer-nw') ? 'nw' :
+                        handle.classList.contains('resizer-ne') ? 'ne' :
+                        handle.classList.contains('resizer-sw') ? 'sw' : 'se';
+            startX = e.clientX;
+            startY = e.clientY;
+            startW = overlay.offsetWidth;
+            startH = overlay.offsetHeight;
+            startL = overlay.offsetLeft;
+            startT = overlay.offsetTop;
+          });
+        });
+        document.addEventListener('mousemove', function(e) {
+          if (isResizing) {
+            let dx = e.clientX - startX;
+            let dy = e.clientY - startY;
+            let newW = startW, newH = startH, newL = startL, newT = startT;
+            if (resizeDir === 'nw') {
+              newW = Math.max(40, startW - dx);
+              newH = Math.max(40, startH - dy);
+              newL = startL + dx;
+              newT = startT + dy;
+            } else if (resizeDir === 'ne') {
+              newW = Math.max(40, startW + dx);
+              newH = Math.max(40, startH - dy);
+              newT = startT + dy;
+            } else if (resizeDir === 'sw') {
+              newW = Math.max(40, startW - dx);
+              newH = Math.max(40, startH + dy);
+              newL = startL + dx;
+            } else if (resizeDir === 'se') {
+              newW = Math.max(40, startW + dx);
+              newH = Math.max(40, startH + dy);
+            }
+            // No boundaries, allow resizing past card area
+            overlay.style.width = newW + 'px';
+            overlay.style.height = newH + 'px';
+            overlay.style.left = newL + 'px';
+            overlay.style.top = newT + 'px';
+          }
+        });
+        document.addEventListener('mouseup', function(e) {
+          if (isResizing) {
+            isResizing = false;
+            overlay.classList.remove('resizing');
+            saveFullArtOverlayState();
+          }
+        });
+        // Touch resize
+        overlay.querySelectorAll('.resizer').forEach(handle => {
+          handle.addEventListener('touchstart', function(e) {
+            e.stopPropagation();
+            isResizing = true;
+            overlay.classList.add('resizing');
+            resizeDir = handle.classList.contains('resizer-nw') ? 'nw' :
+                        handle.classList.contains('resizer-ne') ? 'ne' :
+                        handle.classList.contains('resizer-sw') ? 'sw' : 'se';
+            const touch = e.touches[0];
+            startX = touch.clientX;
+            startY = touch.clientY;
+            startW = overlay.offsetWidth;
+            startH = overlay.offsetHeight;
+            startL = overlay.offsetLeft;
+            startT = overlay.offsetTop;
+          });
+        });
+        document.addEventListener('touchmove', function(e) {
+          if (isResizing) {
+            const touch = e.touches[0];
+            let dx = touch.clientX - startX;
+            let dy = touch.clientY - startY;
+            let newW = startW, newH = startH, newL = startL, newT = startT;
+            if (resizeDir === 'nw') {
+              newW = Math.max(40, startW - dx);
+              newH = Math.max(40, startH - dy);
+              newL = startL + dx;
+              newT = startT + dy;
+            } else if (resizeDir === 'ne') {
+              newW = Math.max(40, startW + dx);
+              newH = Math.max(40, startH - dy);
+              newT = startT + dy;
+            } else if (resizeDir === 'sw') {
+              newW = Math.max(40, startW - dx);
+              newH = Math.max(40, startH + dy);
+              newL = startL + dx;
+            } else if (resizeDir === 'se') {
+              newW = Math.max(40, startW + dx);
+              newH = Math.max(40, startH + dy);
+            }
+            newL = Math.max(0, Math.min(newL, container.offsetWidth - newW));
+            newT = Math.max(0, Math.min(newT, container.offsetHeight - newH));
+            newW = Math.min(newW, container.offsetWidth - newL);
+            newH = Math.min(newH, container.offsetHeight - newT);
+            overlay.style.width = newW + 'px';
+            overlay.style.height = newH + 'px';
+            overlay.style.left = newL + 'px';
+            overlay.style.top = newT + 'px';
+          }
+        });
+        document.addEventListener('touchend', function(e) {
+          if (isResizing) {
+            isResizing = false;
+            overlay.classList.remove('resizing');
+            saveFullArtOverlayState();
+          }
+        });
+
+        // Save/load state
+        function saveFullArtOverlayState() {
+          const state = {
+            left: overlay.style.left,
+            top: overlay.style.top,
+            width: overlay.style.width,
+            height: overlay.style.height
+          };
+          localStorage.setItem('fullArtOverlayState', JSON.stringify(state));
+        }
+        function loadFullArtOverlayState() {
+          const state = JSON.parse(localStorage.getItem('fullArtOverlayState') || '{}');
+          if (state.left) overlay.style.left = state.left;
+          if (state.top) overlay.style.top = state.top;
+          if (state.width) overlay.style.width = state.width;
+          if (state.height) overlay.style.height = state.height;
+        }
+        loadFullArtOverlayState();
+      }
 
 
 
