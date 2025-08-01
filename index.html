@@ -77,10 +77,14 @@
       --weakness-bg-color:rgba(255,255,255,0.15);
     }
     .card-back {
-      background:var(--back-bg, linear-gradient(135deg,#333,#555));
-      border: var(--border-size,40px) solid var(--border-color-back,#ffd700);
-      transform:rotateY(180deg);
-    }
+  background: var(--back-bg, linear-gradient(135deg,#333,#555));
+  border: var(--border-size,40px) solid var(--border-color-back,#ffd700);
+  transform: rotateY(180deg);
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
     .card-header { display:flex; justify-content:space-between; align-items:center; padding:16px 24px; z-index:2; }
     .card-name { font-size:40px; font-weight:bold; color:#fff; text-shadow:2px 2px 4px rgba(0,0,0,0.8); }
     .hp-element { display:flex; align-items:center; }
@@ -115,7 +119,16 @@
     .flavor-text { position: relative; padding:0px 0px 0px 60px; font-size:24px; color:#ddd; line-height:1.2; z-index:3; text-shadow:1px 1px 2px rgba(0,0,0,0.8); word-break: break-word; overflow-wrap: break-word; max-width: 90%; white-space: pre-line; }
     .weakness { position:absolute; bottom:60px; right:40px; background:var(--weakness-bg-color); padding:12px 20px; border-radius:24px; font-size:20px; color:#fff; z-index:2; text-shadow:1px 1px 2px rgba(0,0,0,0.8); }
     .card-number { position:absolute; bottom:20px; left:40px; font-size:20px; color:#fff; z-index:2; text-shadow:1px 1px 2px rgba(0,0,0,0.8); }
-    .card-back .back-pattern { width:100%; height:100%; object-fit:cover; position:absolute; top:0; left:0; }
+    .card-back .back-pattern {
+  width: 100%;
+  height: 100%;
+  object-fit: cover !important;
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: block !important;
+  z-index: 1;
+}
     .card-back .back-overlay { position:absolute; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.4); }
     .card-back .back-title { position:absolute; top:40px; width:100%; text-align:center; font-size:36px; font-weight:bold; color:var(--back-title-color,#ffd700); z-index:2; text-shadow:2px 2px 4px rgba(0,0,0,0.8); }
     .card-back .back-text { position:absolute; bottom:40px; left:40px; right:40px; font-size:24px; color:var(--back-text-color,#fff); line-height:1.3; z-index:2; text-shadow:1px 1px 2px rgba(0,0,0,0.8); }
@@ -176,12 +189,19 @@
   <fieldset>
       <legend>Card Details</legend>
       <label>Name:</label><input type="text" id="cardName" value="Drunken Dict">
+      <label>Name:</label><input type="text" id="cardName" value="Drunken Dict">
+      <label>Name Color:</label><input type="color" id="nameColor" value="#ffffff">
       <label>HP:</label><input type="text" id="hp" value="999">
+      <label>HP Color:</label><input type="color" id="hpColor" value="#ffffff">
       <label>Element Count (before flavor title):</label><input type="number" id="elementCount" min="0" max="10" value="3">
       <label>Flavor Title:</label><input type="text" id="flavorTitle" value="Title">
+      <label>Flavor Title Color:</label><input type="color" id="flavorTitleColor" value="#ffffff">
       <label>Flavor Text:</label><textarea id="flavorText" rows="4">Flavor text goes here...</textarea>
+      <label>Flavor Text Color:</label><input type="color" id="flavorTextColor" value="#ffffff">
       <label>Weakness:</label><input type="text" id="weakness" value="Madaming kalaban">
+      <label>Weakness Color:</label><input type="color" id="weaknessTextColor" value="#ffffff">
       <label>Card Number:</label><input type="text" id="cardNumber" value="100111">
+      <label>Card Number Color:</label><input type="color" id="cardNumberColor" value="#ffffff">
   </fieldset>
   <fieldset>
     <legend>Images</legend>
@@ -284,7 +304,6 @@
         <div class="card-number" id="displayCardNumber">100111</div>
       </div>
       <div class="card-back" id="backCard">
-        <img class="back-pattern" id="backPatternImg" src="" style="display:none;" />
         <div class="back-overlay" id="backOverlay"></div>
         <div class="back-title draggable" id="displayBackTitle" data-element="back-title">Lore & Rules</div>
         <div class="back-text draggable" id="displayBackText" data-element="back-text">Customize the lore or flavor text here.</div>
@@ -535,6 +554,68 @@
         applyFont('displayWeakness', e.target.value);
       };
 
+      // Name Color
+      document.getElementById('nameColor').oninput = e => {
+        document.getElementById('displayName').style.color = e.target.value;
+        localStorage.setItem('nameColor', e.target.value);
+      };
+      // HP Color
+      document.getElementById('hpColor').oninput = e => {
+        document.getElementById('displayHP').style.color = e.target.value;
+        localStorage.setItem('hpColor', e.target.value);
+      };
+      // Weakness Text Color
+      document.getElementById('weaknessTextColor').oninput = e => {
+        document.getElementById('displayWeakness').style.color = e.target.value;
+        localStorage.setItem('weaknessTextColor', e.target.value);
+      };
+      // Card Number Color
+      document.getElementById('cardNumberColor').oninput = e => {
+        document.getElementById('displayCardNumber').style.color = e.target.value;
+        localStorage.setItem('cardNumberColor', e.target.value);
+      };
+      // Flavor Title Color
+      document.getElementById('flavorTitleColor').oninput = e => {
+        document.getElementById('displayFlavorTitle').style.color = e.target.value;
+        localStorage.setItem('flavorTitleColor', e.target.value);
+      };
+      // Flavor Text Color
+      document.getElementById('flavorTextColor').oninput = e => {
+        document.getElementById('displayFlavorText').style.color = e.target.value;
+        localStorage.setItem('flavorTextColor', e.target.value);
+      };
+      // On load, apply saved color if present
+      const savedNameColor = localStorage.getItem('nameColor');
+      if(savedNameColor) {
+        document.getElementById('nameColor').value = savedNameColor;
+        document.getElementById('displayName').style.color = savedNameColor;
+      }
+      const savedHPColor = localStorage.getItem('hpColor');
+      if(savedHPColor) {
+        document.getElementById('hpColor').value = savedHPColor;
+        document.getElementById('displayHP').style.color = savedHPColor;
+      }
+      const savedWeaknessTextColor = localStorage.getItem('weaknessTextColor');
+      if(savedWeaknessTextColor) {
+        document.getElementById('weaknessTextColor').value = savedWeaknessTextColor;
+        document.getElementById('displayWeakness').style.color = savedWeaknessTextColor;
+      }
+      const savedCardNumberColor = localStorage.getItem('cardNumberColor');
+      if(savedCardNumberColor) {
+        document.getElementById('cardNumberColor').value = savedCardNumberColor;
+        document.getElementById('displayCardNumber').style.color = savedCardNumberColor;
+      }
+      const savedFlavorTitleColor = localStorage.getItem('flavorTitleColor');
+      if(savedFlavorTitleColor) {
+        document.getElementById('flavorTitleColor').value = savedFlavorTitleColor;
+        document.getElementById('displayFlavorTitle').style.color = savedFlavorTitleColor;
+      }
+      const savedFlavorTextColor = localStorage.getItem('flavorTextColor');
+      if(savedFlavorTextColor) {
+        document.getElementById('flavorTextColor').value = savedFlavorTextColor;
+        document.getElementById('displayFlavorText').style.color = savedFlavorTextColor;
+      }
+
       // Auto-apply current selections on load
       document.getElementById('fontNameHP').dispatchEvent(new Event('change'));
       document.getElementById('fontFlavor').dispatchEvent(new Event('change'));
@@ -586,16 +667,15 @@
 
       // Handler for the back pattern image upload
       document.getElementById('backPattern').onchange = e => {
-        const img = document.getElementById('backPatternImg');
+        const backCard = document.getElementById('backCard');
         if (!e.target.files.length) {
-          img.src = '';
-          img.style.display = 'none';
+          backCard.style.backgroundImage = '';
           return;
         }
         const url = URL.createObjectURL(e.target.files[0]);
-        img.src = url;
-        img.style.display = 'block';
+        backCard.style.backgroundImage = `url('${url}')`;
       };
+
 
       // 🎯 Live Drag-and-Drop for Element Positioning
       function setupLiveDragging() {
