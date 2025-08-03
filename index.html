@@ -20,7 +20,7 @@
     .canvas { margin-left:20px; perspective:1000px; }
 
     /* Card container */
-    .card-container { width:600px; height:960px; position:relative; transform-style:preserve-3d; transition:transform 0.8s; }
+    .card-container { width:750px; height:1050px; position:relative; transform-style:preserve-3d; transition:transform 0.8s; }
     .card, .card-back {
       position:absolute; width:100%; height:100%; top:0; left:0;
       backface-visibility:hidden; border-radius:30px; box-sizing:border-box;
@@ -186,7 +186,7 @@
     <button class="flip-btn" id="flipBtn">Flip Card</button>
     <button class="drag-toggle" id="dragToggle">🎯 Enable Drag Mode</button>
     <!-- button for printing-->
-    <button class="print-btn" id="printBtn" href="print.html">🖨️ Print Card</button>
+    <button class="print-btn" id="printBtn" onclick="window.location.href='print.html'">🖨️ Print Card</button>
     <div id="frontControls">
   <fieldset>
       <legend>Card Details</legend>

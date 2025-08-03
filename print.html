@@ -38,7 +38,7 @@
         
         .card-slot {
             width: 2.5in;
-            height: 3.7in;
+            height: 3.4in;
             border: 2px dashed #ccc;
             border-radius: 15px;
             position: relative;
@@ -257,7 +257,7 @@
         <h3>🃏 TCG Card Image Upload & Print Template</h3>
         <p><strong>1.</strong> Click on any card slot to upload your card image<br>
         <strong>2.</strong> Supports JPG, PNG, WebP formats<br>
-        <strong>3.</strong> Images will auto-resize to fit card dimensions (2.5" × 3.3")<br>
+        <strong>3.</strong> Images will auto-resize to fit card dimensions (2.5" × 3.4")<br>
         <strong>4.</strong> Print on cardstock (250-300gsm) for best results<br>
         <strong>5.</strong> Images will maintain their aspect ratio</p>
     </div>
@@ -279,7 +279,7 @@
             <div>Total Slots</div>
         </div>
         <div class="stat-item">
-            <div class="stat-number">2.5" × 3.7"</div>
+            <div class="stat-number">2.5" × 3.4"</div>
             <div>Card Size</div>
         </div>
     </div>
@@ -443,7 +443,7 @@
         function addSheet() {
             const newSheet = document.createElement('div');
             newSheet.className = 'card-sheet';
-            newSheet.style.marginTop = '120px';
+            newSheet.style.marginTop = '40px';
             newSheet.style.pageBreakBefore = 'always';
             
             for (let i = 0; i < maxCards; i++) {
